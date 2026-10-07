@@ -1,8 +1,8 @@
 # Java Web Application Deployment using Docker and AWS EC2
 
-A simple Java web application built with Maven, packaged as a WAR file, containerized with Docker and Apache Tomcat, published to Docker Hub, and deployed on an AWS EC2 instance.
+A simple Java web application packaged with Maven, containerized using Docker and Apache Tomcat, pushed to Docker Hub, and deployed on an AWS EC2 instance.
 
-## Technologies
+## Technologies Used
 
 - Java
 - Maven
@@ -11,40 +11,93 @@ A simple Java web application built with Maven, packaged as a WAR file, containe
 - Docker Hub
 - AWS EC2
 
-## Deployment Flow
+## Deployment Architecture
 
+```
 Java Web Application
-→ Maven
-→ WAR File
-→ Docker Image
-→ Docker Hub
-→ AWS EC2
-→ Docker Container
-→ Tomcat
-→ Web Application
+        ↓
+      Maven
+        ↓
+      WAR File
+        ↓
+   Docker Image
+        ↓
+    Docker Hub
+        ↓
+     AWS EC2
+        ↓
+ Docker Container
+        ↓
+    Tomcat :8080
+        ↓
+Web Application
+```
 
-## Build the WAR
+## 1. Build the Java Application
+
+The application was created using the Maven Web Application archetype.
+
+```bash
+mvn archetype:generate -DgroupId=org.scopeindia -DartifactId=my-web-app -DarchetypeArtifactId=maven-archetype-webapp -DarchetypeVersion=1.4 -DinteractiveMode=false
+```
+
+Build the WAR file:
 
 ```bash
 mvn clean package
 ```
 
-The WAR file is generated in the `target/` directory.
+The generated WAR file is:
 
-## Dockerfile
+```text
+target/my-web-app.war
+```
 
-The application WAR is copied into Tomcat's `webapps` directory.
+## 2. Dockerfile
 
-## Build the Docker Image
+The WAR file is deployed into the Tomcat `webapps` directory.
+
+```dockerfile
+FROM tomcat:latest
+MAINTAINER vinayak<vhvinayak2@gmail.com>
+
+COPY target/my-web-app.war /usr/local/tomcat/webapps/
+
+EXPOSE 8080
+```
+
+## 3. Build the Docker Image
 
 ```bash
 docker build -t my-web-app .
 ```
 
-## Run the Container
+Check the image:
 
 ```bash
-docker run -d -p 8080:8080 --name java-webapp my-web-app
+docker images
+```
+
+## 4. Push the Image to Docker Hub
+
+Docker Hub repository:
+
+**vhvinayak/my-web-app**
+
+Commands used:
+
+```bash
+docker login
+docker tag my-web-app vhvinayak/my-web-app:latest
+docker push vhvinayak/my-web-app:latest
+```
+
+## 5. Run the Container on AWS EC2
+
+The application runs on Tomcat port `8080` inside the container. Port `8999` on the EC2 host is mapped to container port `8080`.
+
+```bash
+docker run -d -p 8999:8080 my-web-app
 ```
 
 Check the running container:
@@ -53,24 +106,70 @@ Check the running container:
 docker ps
 ```
 
-## Push to Docker Hub
+Example:
 
-```bash
-docker login
-docker tag my-web-app <dockerhub-username>/my-web-app:latest
-docker push <dockerhub-username>/my-web-app:latest
+```text
+0.0.0.0:8999->8080/tcp
 ```
 
-## AWS EC2
+## 6. AWS Security Group
 
-The Docker container was deployed on an EC2 instance. The application port was allowed through the EC2 Security Group.
+An inbound rule was added to allow TCP traffic on port **8999**.
 
 The application can then be accessed using:
 
 ```text
-http://<EC2-PUBLIC-IP>:8080/<application-context>/
+http://<EC2-PUBLIC-IP>:8999/my-web-app/
 ```
 
-## Project Result
+## 7. Application Result
 
-The Java web application was successfully packaged, containerized, published to Docker Hub, and deployed on AWS EC2.
+The deployed website displays:
+
+- Java Web Application
+- Deployment success message
+- Technologies used
+- Deployment process
+- Application running inside a Docker container
+
+The application was successfully accessed through the EC2 public IP and port **8999**.
+
+## Useful Docker Commands
+
+Check running containers:
+
+```bash
+docker ps
+```
+
+Check all containers:
+
+```bash
+docker ps -a
+```
+
+Check Docker images:
+
+```bash
+docker images
+```
+
+Stop a container:
+
+```bash
+docker stop <container-id>
+```
+
+Remove a container:
+
+```bash
+docker rm <container-id>
+```
+
+## Project Outcome
+
+This project demonstrates a complete basic deployment workflow:
+
+**Maven → WAR → Docker Image → Docker Hub → AWS EC2 → Docker Container → Tomcat → Web Application**
+
+It was a hands-on practice project for learning Docker containerization and cloud deployment with AWS EC2.
